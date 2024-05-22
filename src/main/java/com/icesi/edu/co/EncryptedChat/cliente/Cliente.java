@@ -2,51 +2,73 @@ package com.icesi.edu.co.EncryptedChat.cliente;
 
 import com.icesi.edu.co.EncryptedChat.encriptacion.Encriptador;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.KeyAgreement;
+import javax.crypto.NoSuchPaddingException;
+import javax.crypto.spec.SecretKeySpec;
+import java.io.*;
 import java.net.Socket;
+import java.security.*;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.X509EncodedKeySpec;
+import java.util.Base64;
 
 public class Cliente {
-    private static final String SERVER_IP = "192.168.130.70"; // Cambia esto por la dirección IP del servidor
-    private static final int SERVER_PORT = 12345; // Cambia esto por el puerto del servidor
+    private static final String SERVER_IP = "localhost";
+    private static final int SERVER_PORT = 12345;
 
     public static void main(String[] args) {
         try {
             Socket socket = new Socket(SERVER_IP, SERVER_PORT);
             System.out.println("Conectado al servidor.");
 
-            BufferedReader input = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            PrintWriter output = new PrintWriter(socket.getOutputStream(), true);
+            ObjectOutputStream salida = new ObjectOutputStream(socket.getOutputStream());
+            ObjectInputStream entrada = new ObjectInputStream(socket.getInputStream());
 
-            // Lógica para leer mensajes del usuario y enviarlos al servidor
+            // Generar par de claves DH
+            KeyPairGenerator kpg = KeyPairGenerator.getInstance("DH");
+            kpg.initialize(1024);
+            KeyPair kp = kpg.generateKeyPair();
+
+            // Enviar clave pública al servidor
+            PublicKey publicKey = kp.getPublic();
+            salida.writeObject(publicKey.getEncoded());
+
+            // Recibir clave pública del servidor
+            byte[] publicKeyBytesServidor = (byte[]) entrada.readObject();
+            X509EncodedKeySpec x509KeySpec = new X509EncodedKeySpec(publicKeyBytesServidor);
+            KeyFactory keyFact = KeyFactory.getInstance("DH");
+            PublicKey pubKeyServidor = keyFact.generatePublic(x509KeySpec);
+
+            // Establecer clave compartida
+            Encriptador.establecerClaveCompartida(kp, pubKeyServidor);
+
             BufferedReader userInput = new BufferedReader(new InputStreamReader(System.in));
             String message;
             while (true) {
                 System.out.print("Ingrese su mensaje: ");
                 message = userInput.readLine();
                 if (message.equalsIgnoreCase("exit")) {
-                    break; // Salir del bucle si el usuario ingresa "exit"
+                    break;
                 }
                 // Encriptar el mensaje antes de enviarlo
                 String encryptedMessage = Encriptador.cifrarMensaje(message);
-                output.println(encryptedMessage);
+                salida.writeObject(encryptedMessage);
 
                 // Leer la respuesta del servidor
-                String response = input.readLine();
-                System.out.println("Respuesta del servidor: " + response);
+                String response = (String) entrada.readObject();
+                String decryptedResponse = Encriptador.descifrarMensaje(response);
+                System.out.println("Respuesta del servidor: " + decryptedResponse);
             }
 
-            // Cerramos los recursos
-            input.close();
-            output.close();
+            entrada.close();
+            salida.close();
             socket.close();
-        } catch (IOException e) {
-            System.err.println("Error al conectar con el servidor: " + e.getMessage());
+        } catch (IOException | NoSuchAlgorithmException | ClassNotFoundException | InvalidKeySpecException | NoSuchPaddingException | InvalidKeyException | IllegalBlockSizeException | BadPaddingException e) {
             e.printStackTrace();
         } catch (Exception e) {
-            e.printStackTrace();
+            throw new RuntimeException(e);
         }
     }
 }

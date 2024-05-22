@@ -2,18 +2,19 @@ package com.icesi.edu.co.EncryptedChat.servidor;
 
 import com.icesi.edu.co.EncryptedChat.encriptacion.Encriptador;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
+import javax.crypto.*;
+import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.security.*;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
 import java.util.List;
 
 public class Servidor {
     private static final int SERVER_PORT = 12345;
-    private static List<PrintWriter> clients = new ArrayList<>();
+    private static List<ObjectOutputStream> clients = new ArrayList<>();
 
     public static void main(String[] args) {
         try {
@@ -24,7 +25,6 @@ public class Servidor {
                 Socket clientSocket = serverSocket.accept();
                 System.out.println("Cliente conectado desde: " + clientSocket.getInetAddress());
 
-                // Manejar la comunicación con el cliente en un hilo separado
                 Thread clientThread = new Thread(new ClientHandler(clientSocket));
                 clientThread.start();
             }
@@ -36,7 +36,8 @@ public class Servidor {
 
     private static class ClientHandler implements Runnable {
         private Socket clientSocket;
-        private PrintWriter clientOutput;
+        private ObjectOutputStream salida;
+        private ObjectInputStream entrada;
 
         public ClientHandler(Socket clientSocket) {
             this.clientSocket = clientSocket;
@@ -45,44 +46,65 @@ public class Servidor {
         @Override
         public void run() {
             try {
-                BufferedReader input = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-                clientOutput = new PrintWriter(clientSocket.getOutputStream(), true);
+                salida = new ObjectOutputStream(clientSocket.getOutputStream());
+                entrada = new ObjectInputStream(clientSocket.getInputStream());
 
-                // Agregar el PrintWriter del cliente a la lista de clientes
+                // Generar par de claves DH
+                KeyPairGenerator kpg = KeyPairGenerator.getInstance("DH");
+                kpg.initialize(1024);
+                KeyPair kp = kpg.generateKeyPair();
+
+                // Recibir clave pública del cliente
+                byte[] publicKeyBytesCliente = (byte[]) entrada.readObject();
+                X509EncodedKeySpec x509KeySpec = new X509EncodedKeySpec(publicKeyBytesCliente);
+                KeyFactory keyFact = KeyFactory.getInstance("DH");
+                PublicKey pubKeyCliente = keyFact.generatePublic(x509KeySpec);
+
+                // Enviar clave pública al cliente
+                PublicKey publicKey = kp.getPublic();
+                salida.writeObject(publicKey.getEncoded());
+
+                // Establecer clave compartida
+                KeyAgreement keyAgreement = KeyAgreement.getInstance("DH");
+                keyAgreement.init(kp.getPrivate());
+                keyAgreement.doPhase(pubKeyCliente, true);
+                byte[] sharedSecret = keyAgreement.generateSecret();
+                Encriptador.establecerClaveCompartida(sharedSecret);
+
                 synchronized (clients) {
-                    clients.add(clientOutput);
+                    clients.add(salida);
                 }
 
                 String message;
-                while ((message = input.readLine()) != null) {
-                    // Descifrar el mensaje recibido del cliente
+                while ((message = (String) entrada.readObject()) != null) {
                     String decryptedMessage = Encriptador.descifrarMensaje(message);
-                    // Enviar el mensaje descifrado a todos los clientes, excepto al remitente
-                    broadcastMessage(decryptedMessage);
+                    broadcastMessage(decryptedMessage, salida);
                 }
 
-                // Si el cliente se desconecta, eliminar su PrintWriter de la lista de clientes
                 synchronized (clients) {
-                    clients.remove(clientOutput);
+                    clients.remove(salida);
                 }
 
-                input.close();
-                clientOutput.close();
+                entrada.close();
+                salida.close();
                 clientSocket.close();
-            } catch (IOException e) {
-                System.err.println("Error al manejar la conexión con el cliente: " + e.getMessage());
+            } catch (IOException | ClassNotFoundException | NoSuchAlgorithmException | InvalidKeySpecException | NoSuchPaddingException | InvalidKeyException | IllegalBlockSizeException | BadPaddingException e) {
                 e.printStackTrace();
             } catch (Exception e) {
-                e.printStackTrace();
+                throw new RuntimeException(e);
             }
         }
 
-        // Método para enviar un mensaje en texto plano a todos los clientes, excepto al remitente
-        private void broadcastMessage(String message) {
+        private void broadcastMessage(String message, ObjectOutputStream excludeClient) {
             synchronized (clients) {
-                for (PrintWriter client : clients) {
-                    if (client != clientOutput) {
-                        client.println(message);
+                for (ObjectOutputStream client : clients) {
+                    if (client != excludeClient) {
+                        try {
+                            String encryptedMessage = Encriptador.cifrarMensaje(message);
+                            client.writeObject(encryptedMessage);
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
                     }
                 }
             }
