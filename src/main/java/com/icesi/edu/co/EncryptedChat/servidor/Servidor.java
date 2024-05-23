@@ -9,24 +9,34 @@ import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class Servidor {
-    private static final int SERVER_PORT = 12345;
-    private static List<PrintWriter> clients = new ArrayList<>();
+    private static final int PORT_MIN = 12345;
+    private static final int PORT_MAX = 12350; // Adjust port range as needed
+    private static final String SERVER_IP = "172.30.180.124"; // Specify the server's IP address
+    private static Map<Integer, List<PrintWriter>> portClientsMap = new HashMap<>();
 
     public static void main(String[] args) {
         try {
-            ServerSocket serverSocket = new ServerSocket(SERVER_PORT);
-            System.out.println("Servidor iniciado. Esperando conexiones...");
+            for (int port = PORT_MIN; port <= PORT_MAX; port++) {
+                ServerSocket serverSocket = new ServerSocket(port);
+                System.out.println("Servidor iniciado en el puerto: " + port);
+                portClientsMap.put(port, new ArrayList<>());
 
-            while (true) {
-                Socket clientSocket = serverSocket.accept();
-                System.out.println("Cliente conectado desde: " + clientSocket.getInetAddress());
+                while (true) {
+                    Socket clientSocket = serverSocket.accept();
+                    System.out.println("Cliente conectado desde: " + clientSocket.getInetAddress());
 
-                // Manejar la comunicación con el cliente en un hilo separado
-                Thread clientThread = new Thread(new ClientHandler(clientSocket));
-                clientThread.start();
+                    // Pair clients on adjacent ports
+                    int pairedPort = (port % 2 == 0) ? port - 1 : port + 1;
+
+                    // Manejar la comunicación con el cliente en un hilo separado
+                    Thread clientThread = new Thread(new ClientHandler(clientSocket, pairedPort));
+                    clientThread.start();
+                }
             }
         } catch (IOException e) {
             System.err.println("Error al iniciar el servidor: " + e.getMessage());
@@ -37,9 +47,11 @@ public class Servidor {
     private static class ClientHandler implements Runnable {
         private Socket clientSocket;
         private PrintWriter clientOutput;
+        private int pairedPort;
 
-        public ClientHandler(Socket clientSocket) {
+        public ClientHandler(Socket clientSocket, int pairedPort) {
             this.clientSocket = clientSocket;
+            this.pairedPort = pairedPort;
         }
 
         @Override
@@ -48,22 +60,29 @@ public class Servidor {
                 BufferedReader input = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
                 clientOutput = new PrintWriter(clientSocket.getOutputStream(), true);
 
-                // Agregar el PrintWriter del cliente a la lista de clientes
-                synchronized (clients) {
-                    clients.add(clientOutput);
+                // Ensure that the list for the paired port is initialized
+                synchronized (portClientsMap) {
+                    if (!portClientsMap.containsKey(pairedPort)) {
+                        portClientsMap.put(pairedPort, new ArrayList<>());
+                    }
+                }
+
+                // Add the PrintWriter of the client to the list of clients
+                synchronized (portClientsMap) {
+                    portClientsMap.get(pairedPort).add(clientOutput);
                 }
 
                 String message;
                 while ((message = input.readLine()) != null) {
-                    // Descifrar el mensaje recibido del cliente
+                    // Decrypt the received message from the client
                     String decryptedMessage = Encriptador.descifrarMensaje(message);
-                    // Enviar el mensaje descifrado a todos los clientes, excepto al remitente
-                    broadcastMessage(decryptedMessage);
+                    // Send the decrypted message to the paired client
+                    sendToPairedClient(decryptedMessage);
                 }
 
-                // Si el cliente se desconecta, eliminar su PrintWriter de la lista de clientes
-                synchronized (clients) {
-                    clients.remove(clientOutput);
+                // If the client disconnects, remove its PrintWriter from the list of clients
+                synchronized (portClientsMap) {
+                    portClientsMap.get(pairedPort).remove(clientOutput);
                 }
 
                 input.close();
@@ -77,13 +96,11 @@ public class Servidor {
             }
         }
 
-        // Método para enviar un mensaje en texto plano a todos los clientes, excepto al remitente
-        private void broadcastMessage(String message) {
-            synchronized (clients) {
-                for (PrintWriter client : clients) {
-                    if (client != clientOutput) {
-                        client.println(message);
-                    }
+        // Method to send a plain text message to the paired client
+        private void sendToPairedClient(String message) {
+            synchronized (portClientsMap) {
+                for (PrintWriter client : portClientsMap.get(pairedPort)) {
+                    client.println(message);
                 }
             }
         }

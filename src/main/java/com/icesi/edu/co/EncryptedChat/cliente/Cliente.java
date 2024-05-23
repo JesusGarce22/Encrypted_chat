@@ -9,19 +9,22 @@ import java.io.PrintWriter;
 import java.net.Socket;
 
 public class Cliente {
-    private static final String SERVER_IP = "192.168.130.70"; // Cambia esto por la dirección IP del servidor
+    private static final String SERVER_IP = "172.30.180.124"; // Cambia esto por la dirección IP del servidor
     private static final int SERVER_PORT = 12345; // Cambia esto por el puerto del servidor
 
     public static void main(String[] args) {
         try {
-            Socket socket = new Socket(SERVER_IP, SERVER_PORT);
-            System.out.println("Conectado al servidor.");
+            BufferedReader userInput = new BufferedReader(new InputStreamReader(System.in));
+            System.out.print("Ingrese el puerto al que desea conectar: ");
+            int port = Integer.parseInt(userInput.readLine());
+
+            Socket socket = new Socket(SERVER_IP, port);
+            System.out.println("Conectado al servidor en el puerto: " + port);
 
             BufferedReader input = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             PrintWriter output = new PrintWriter(socket.getOutputStream(), true);
 
             // Lógica para leer mensajes del usuario y enviarlos al servidor
-            BufferedReader userInput = new BufferedReader(new InputStreamReader(System.in));
             String message;
             while (true) {
                 System.out.print("Ingrese su mensaje: ");

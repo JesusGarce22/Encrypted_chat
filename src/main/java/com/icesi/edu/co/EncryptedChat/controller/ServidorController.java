@@ -1,4 +1,3 @@
-// ServidorController.java
 package com.icesi.edu.co.EncryptedChat.controller;
 
 import com.icesi.edu.co.EncryptedChat.encriptacion.Encriptador;
@@ -23,14 +22,13 @@ public class ServidorController {
     @Autowired
     private MensajeDescifradoProcessor mensajeDescifradoProcessor; // Inyección del procesador de mensajes descifrados
 
-
     @PostMapping("/mensaje")
     public void recibirMensaje(@RequestBody String mensajeCifrado) {
         try {
             String mensajeDescifrado = Encriptador.descifrarMensaje(mensajeCifrado);
             System.out.println("Mensaje recibido por el servidor: " + mensajeDescifrado);
 
-            // Procesar el mensaje descifrado utilizando el procesador
+            // Procesar el mensaje descifrado utilizando el procesador inyectado
             mensajeDescifradoProcessor.procesarMensaje(mensajeDescifrado);
 
             // Envía el mensaje descifrado a todos los clientes conectados

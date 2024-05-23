@@ -1,4 +1,3 @@
-// ChatController.java
 package com.icesi.edu.co.EncryptedChat.controller;
 
 import com.icesi.edu.co.EncryptedChat.encriptacion.Encriptador;
@@ -12,7 +11,10 @@ import org.springframework.stereotype.Controller;
 public class ChatController {
 
     @Autowired
-    private SimpMessagingTemplate messagingTemplate; // Inyección del template para enviar mensajes a través de WebSocket
+    private SimpMessagingTemplate messagingTemplate; // Inject the template to send messages via WebSocket
+
+    @Autowired
+    private MensajeDescifradoProcessor mensajeDescifradoProcessor; // Inject the decrypted message processor
 
     @MessageMapping("/topic/mensajes")
     public void recibirMensaje(String mensaje) {
@@ -20,7 +22,7 @@ public class ChatController {
             String mensajeDescifrado = Encriptador.descifrarMensaje(mensaje);
             System.out.println("Mensaje recibido por el servidor: " + mensajeDescifrado);
 
-            // Envía el mensaje descifrado a todos los clientes conectados
+            // Send the decrypted message to all connected clients
             messagingTemplate.convertAndSend("/topic/mensajes", mensajeDescifrado);
 
         } catch (Exception e) {
@@ -28,9 +30,26 @@ public class ChatController {
         }
     }
 
-    // Método para enviar un mensaje al servidor
+    // Method to send a message to the server
     public void enviarMensaje(String mensaje) {
-        // Envía el mensaje al destino "/app/chat" para que el servidor lo reciba y lo procese
+        // Send the message to the "/app/chat" destination for the server to receive and process it
         messagingTemplate.convertAndSend("/app/chat", mensaje);
+    }
+
+    // Method to handle receiving messages from clients asynchronously
+    public void handleReceivedMessage(String mensaje) {
+        try {
+            // Decrypt the received message
+            String mensajeDescifrado = Encriptador.descifrarMensaje(mensaje);
+            System.out.println("Mensaje recibido por el servidor: " + mensajeDescifrado);
+
+            // Process the decrypted message using the injected processor
+            mensajeDescifradoProcessor.procesarMensaje(mensajeDescifrado);
+
+            // Send the decrypted message to all connected clients
+            messagingTemplate.convertAndSend("/topic/mensajes", mensajeDescifrado);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }

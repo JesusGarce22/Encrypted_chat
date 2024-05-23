@@ -1,8 +1,6 @@
 package com.icesi.edu.co.EncryptedChat.processor;
 
-import org.springframework.stereotype.Component;
-
-// Definición de la interfaz del procesador de mensajes descifrados
+// Definition of the interface for the decrypted message processor
 public interface MensajeDescifradoProcessor {
     void procesarMensaje(String mensajeDescifrado);
 }
