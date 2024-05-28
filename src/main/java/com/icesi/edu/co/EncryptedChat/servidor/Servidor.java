@@ -16,7 +16,7 @@ import java.util.Map;
 public class Servidor {
     private static final int PORT_MIN = 12345;
     private static final int PORT_MAX = 12350; // Adjust port range as needed
-    private static final String SERVER_IP = "172.30.180.124"; // Specify the server's IP address
+    private static final String SERVER_IP = "172.30.179.212"; // Specify the server's IP address
     private static Map<Integer, List<PrintWriter>> portClientsMap = new HashMap<>();
 
     public static void main(String[] args) {
