@@ -1,4 +1,4 @@
-package com.icesi.edu.co.EncryptedChat.config;
+package com.icesi.chatend.config;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
