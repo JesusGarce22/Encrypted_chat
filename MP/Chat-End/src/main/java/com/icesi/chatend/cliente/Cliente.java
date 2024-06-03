@@ -22,35 +22,87 @@ import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 
+/**
+ * Clase que representa el cliente del chat.
+ * Permite a los usuarios enviar y recibir mensajes en el chat.
+ * @author [Jesus Garces - Juan Pablo Acevedo]
+ * @version 3.0
+ */
 public class Cliente extends Application {
-    private static final String SERVER_IP = "localhost"; // Cambia esto por la dirección IP del servidor
+    /**
+     * Dirección IP del servidor.
+     */
+    private static final String SERVER_IP = "192.168.1.8"; // Cambia esto por la dirección IP del servidor
 
+    /**
+     * Área de texto donde se muestran los mensajes.
+     */
     @FXML
     private TextArea printedMessages;
 
+    /**
+     * Campo de texto para ingresar el nombre de usuario.
+     */
     @FXML
     private TextField userName;
 
+    /**
+     * Campo de texto para ingresar el número de puerto del servidor.
+     */
     @FXML
     private TextField portNumber;
 
+    /**
+     * Campo de texto para ingresar el mensaje que el usuario desea enviar.
+     */
     @FXML
     private TextField clientSendMessage;
 
+    /**
+     * Botón para iniciar la conexión con el servidor.
+     */
     @FXML
     private Button startButton;
 
+    /**
+     * Botón para salir del cliente.
+     */
     @FXML
     private Button exitButton;
 
+    /**
+     * Botón para enviar un mensaje al servidor.
+     */
     @FXML
     private Button sendButton;
 
+    /**
+     * Socket para la conexión con el servidor.
+     */
     private Socket socket;
+
+    /**
+     * Flujo de entrada para recibir mensajes del servidor.
+     */
     private BufferedReader input;
+
+    /**
+     * Flujo de salida para enviar mensajes al servidor.
+     */
     private PrintWriter output;
+
+    /**
+     * Hilo para escuchar mensajes del servidor.
+     */
     private Thread serverListenerThread;
 
+    /**
+     * Método que se ejecuta al iniciar la aplicación.
+     * Configura la interfaz gráfica y muestra la ventana del cliente.
+     *
+     * @param primaryStage El escenario principal de la aplicación.
+     * @throws Exception Si ocurre un error al cargar la interfaz gráfica.
+     */
     @Override
     public void start(Stage primaryStage) throws Exception {
         FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/icesi/chatend/client.fxml"));
@@ -61,6 +113,12 @@ public class Cliente extends Application {
         primaryStage.show();
     }
 
+    /**
+     * Método que se ejecuta al hacer clic en el botón de iniciar conexión.
+     * Inicia la conexión con el servidor en un hilo separado.
+     *
+     * @param event El evento de acción que desencadena el método.
+     */
     @FXML
     public void onStartButtonClick(ActionEvent event) {
         String userNameText = userName.getText();
@@ -70,6 +128,12 @@ public class Cliente extends Application {
         new Thread(() -> connectToServer(userNameText, port)).start();
     }
 
+    /**
+     * Método que se ejecuta al hacer clic en el botón de salir.
+     * Cierra la conexión con el servidor y termina la aplicación.
+     *
+     * @param event El evento de acción que desencadena el método.
+     */
     @FXML
     public void onExitButtonClick(ActionEvent event) {
         if (socket != null && !socket.isClosed()) {
@@ -82,6 +146,13 @@ public class Cliente extends Application {
         System.exit(0);
     }
 
+    /**
+     * Método que se ejecuta al hacer clic en el botón de enviar mensaje.
+     * Envía el mensaje ingresado por el usuario al servidor.
+     *
+     * @param event El evento de acción que desencadena el método.
+     * @throws Exception Si ocurre un error al enviar el mensaje.
+     */
     @FXML
     public void onSendButtonClick(ActionEvent event) throws Exception {
         String message = clientSendMessage.getText();
@@ -91,8 +162,14 @@ public class Cliente extends Application {
         }
     }
 
+    /**
+     * Establece la conexión con el servidor.
+     * Crea el socket, los flujos de entrada y salida, y comienza el hilo para escuchar mensajes del servidor.
+     *
+     * @param userName El nombre de usuario del cliente.
+     * @param port     El número de puerto del servidor.
+     */
     private void connectToServer(String userName, int port) {
-
         try {
             socket = new Socket(SERVER_IP, port);
             input = new BufferedReader(new InputStreamReader(socket.getInputStream()));
@@ -123,6 +200,12 @@ public class Cliente extends Application {
         }
     }
 
+    /**
+     * Envía un mensaje al servidor.
+     *
+     * @param message El mensaje a enviar.
+     * @throws Exception Si ocurre un error al enviar el mensaje.
+     */
     private void sendMessage(String message) throws Exception {
         if (socket != null && socket.isConnected() && output != null) {
             String userNameText = userName.getText();
@@ -133,6 +216,13 @@ public class Cliente extends Application {
         }
     }
 
+    /**
+     * Genera una clave secreta basada en el nombre de usuario.
+     * La clave secreta tiene una longitud fija de 16 caracteres.
+     *
+     * @param userName El nombre de usuario del cliente.
+     * @return La clave secreta generada.
+     */
     private String generarClaveSecreta(String userName) {
         // Asegurar que el nombre de usuario tenga como máximo 16 caracteres
         if (userName.length() > 16) {
@@ -147,7 +237,15 @@ public class Cliente extends Application {
 
         return userName;
     }
+
+    /**
+     * Método principal de la aplicación.
+     * Lanza la aplicación de cliente.
+     *
+     * @param args Los argumentos de la línea de comandos.
+     */
     public static void main(String[] args) {
         launch(args);
     }
 }
+

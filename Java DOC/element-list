@@ -1,0 +1,5 @@
+module:com.icesi.chat
+com.icesi.chatend
+com.icesi.chatend.cliente
+com.icesi.chatend.encriptacion
+com.icesi.chatend.servidor

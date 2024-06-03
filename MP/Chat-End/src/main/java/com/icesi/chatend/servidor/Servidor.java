@@ -21,21 +21,59 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Clase que representa el servidor del chat.
+ *
+ * @author [Jesus Garces - Juan Pablo Acevedo]
+ * @version 3.0
+ */
 public class Servidor extends Application {
 
+    /**
+     * Instancia única de la clase Servidor.
+     */
     private static Servidor instance;
 
+    /**
+     * Puerto mínimo permitido para la conexión del servidor.
+     */
     private static final int PORT_MIN = 12345;
+
+    /**
+     * Puerto máximo permitido para la conexión del servidor.
+     */
     private static final int PORT_MAX = 12350;
-    private static final String SERVER_IP = "localhost";
+
+    /**
+     * Dirección IP del servidor.
+     */
+    private static final String SERVER_IP = "192.168.1.8";
+
+    /**
+     * Mapa que asocia cada puerto con la lista de clientes conectados a ese puerto.
+     */
     private static Map<Integer, List<PrintWriter>> portClientsMap = new HashMap<>();
 
+    /**
+     * Socket del servidor.
+     */
     private ServerSocket serverSocket;
 
+    /**
+     * Botón para iniciar el servidor.
+     */
     @FXML
     private Button startButton;
+
+    /**
+     * Botón para salir del servidor.
+     */
     @FXML
     private Button exitButton;
+
+    /**
+     * Área de texto donde se muestran los mensajes.
+     */
     @FXML
     private TextArea printedMessages;
 
@@ -43,6 +81,11 @@ public class Servidor extends Application {
         // Private constructor to prevent instantiation
     }
 
+    /**
+     * Obtiene la instancia única de la clase Servidor.
+     *
+     * @return La instancia única de la clase Servidor.
+     */
     public static Servidor getInstance() {
         if (instance == null) {
             instance = new Servidor();
@@ -63,6 +106,9 @@ public class Servidor extends Application {
         launch(args);
     }
 
+    /**
+     * Maneja el evento de clic en el botón de iniciar.
+     */
     @FXML
     public void onStartButtonClick() {
         new Thread(() -> {
@@ -88,25 +134,43 @@ public class Servidor extends Application {
         }).start();
     }
 
+    /**
+     * Maneja el evento de clic en el botón de salir.
+     */
     @FXML
     public void onExitButtonClick() {
         System.exit(0);
     }
 
+    /**
+     * Agrega un mensaje al área de mensajes.
+     * @param message El mensaje a agregar.
+     */
     private void appendMessage(String message) {
         Platform.runLater(() -> printedMessages.appendText(message + "\n"));
     }
 
+    /**
+     * Clase interna que maneja la conexión con un cliente.
+     */
     private static class ClientHandler implements Runnable {
         private Socket clientSocket;
         private PrintWriter clientOutput;
         private int pairedPort;
 
+        /**
+         * Constructor de la clase ClientHandler.
+         * @param clientSocket El socket del cliente.
+         * @param pairedPort El puerto asociado para la comunicación con el cliente emparejado.
+         */
         public ClientHandler(Socket clientSocket, int pairedPort) {
             this.clientSocket = clientSocket;
             this.pairedPort = pairedPort;
         }
 
+        /**
+         * Método que se ejecuta en un hilo separado para manejar la comunicación con el cliente.
+         */
         @Override
         public void run() {
             try {
@@ -143,6 +207,10 @@ public class Servidor extends Application {
             }
         }
 
+        /**
+         * Envía un mensaje al cliente emparejado.
+         * @param message El mensaje a enviar.
+         */
         private void sendToPairedClient(String message) {
             synchronized (portClientsMap) {
                 for (PrintWriter client : portClientsMap.get(pairedPort)) {

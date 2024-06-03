@@ -1,0 +1,1 @@
+packageSearchIndex = [{"l":"All Packages","u":"allpackages-index.html"},{"m":"com.icesi.chat","l":"com.icesi.chatend"},{"m":"com.icesi.chat","l":"com.icesi.chatend.cliente"},{"m":"com.icesi.chat","l":"com.icesi.chatend.encriptacion"},{"m":"com.icesi.chat","l":"com.icesi.chatend.servidor"}];updateSearchResults();
