@@ -7,7 +7,7 @@ Encrypted-chat es una aplicación de chat seguro que utiliza el algoritmo de int
 - Comunicación segura mediante el intercambio de claves Diffie-Hellman.
 - Cifrado de mensajes utilizando el algoritmo AES en modo CBC con relleno PKCS5.
 - Interfaz gráfica de usuario simple y fácil de usar.
-- Tambien se puede usar mediante la consola en la rama ()
+- Tambien se puede usar mediante la consola en la rama (Console-mode)
 
 ## Requisitos
 
