@@ -24,15 +24,12 @@ Encrypted-chat es una aplicación de chat seguro que utiliza el algoritmo de int
    git clone https://github.com/JesusGarce22/Encrypted_chat.git
 
 2. Cambiar de la rama main a Console-mode
-3. Configuracion de Servidor y Cliente.
 
-    Cambiar la direccion ip y puerto en el que se va corre el Cliente y el Servidor.
-
-4. Iniciar clase Servidor.
+3. Iniciar clase Servidor.
 
 ![Servidor](imgs/Servidor.png)
 
-5. Iniciar clase Cliente.
+4. Iniciar clase Cliente.
 
 ![Cliente](imgs/Cliente.png)
 

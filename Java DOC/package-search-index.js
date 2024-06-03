@@ -1,0 +1,1 @@
+packageSearchIndex = [{"l":"All Packages","u":"allpackages-index.html"},{"l":"com.icesi.edu.co.EncryptedChat"},{"l":"com.icesi.edu.co.EncryptedChat.cliente"},{"l":"com.icesi.edu.co.EncryptedChat.encriptacion"},{"l":"com.icesi.edu.co.EncryptedChat.servidor"}];updateSearchResults();

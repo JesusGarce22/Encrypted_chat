@@ -2,47 +2,45 @@ package com.icesi.edu.co.EncryptedChat.encriptacion;
 
 import javax.crypto.*;
 import javax.crypto.spec.SecretKeySpec;
-import java.security.*;
 import java.util.Base64;
 
+/**
+ * Clase Encriptador que maneja el cifrado y descifrado de mensajes utilizando AES.
+ *
+ * @autor [Jesus Garces - Juan Pablo Acevedo]
+ * @version 5.0
+ */
 public class Encriptador {
-    private static SecretKey claveCompartida;
-    public static void establecerClaveCompartida(byte[] sharedSecret) {
-        claveCompartida = new SecretKeySpec(sharedSecret, 0, 16, "AES");
-    }
 
-    public static String cifrarMensaje(String mensaje) throws Exception {
+    /**
+     * Método para cifrar un mensaje utilizando una clave compartida.
+     *
+     * @param mensaje        El mensaje a cifrar.
+     * @param claveCompartida La clave compartida para el cifrado.
+     * @return El mensaje cifrado en Base64.
+     * @throws Exception Si ocurre un error durante el cifrado.
+     */
+    public static String cifrarMensaje(String mensaje, SecretKey claveCompartida) throws Exception {
         Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
         cipher.init(Cipher.ENCRYPT_MODE, claveCompartida);
         byte[] encryptedMessage = cipher.doFinal(mensaje.getBytes());
         String encryptedBase64 = Base64.getEncoder().encodeToString(encryptedMessage);
-        System.out.println("Mensaje cifrado: " + encryptedBase64);
         return encryptedBase64;
     }
 
-    public static String descifrarMensaje(String mensajeCifrado) throws Exception {
-        System.out.println("Mensaje cifrado recibido: " + mensajeCifrado);
+    /**
+     * Método para descifrar un mensaje cifrado utilizando una clave compartida.
+     *
+     * @param mensajeCifrado El mensaje cifrado en Base64.
+     * @param claveCompartida La clave compartida para el descifrado.
+     * @return El mensaje descifrado.
+     * @throws Exception Si ocurre un error durante el descifrado.
+     */
+    public static String descifrarMensaje(String mensajeCifrado, SecretKey claveCompartida) throws Exception {
         byte[] encryptedMessage = Base64.getDecoder().decode(mensajeCifrado);
         Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
         cipher.init(Cipher.DECRYPT_MODE, claveCompartida);
         byte[] decryptedMessage = cipher.doFinal(encryptedMessage);
-        String decryptedText = new String(decryptedMessage);
-        System.out.println("Mensaje descifrado: " + decryptedText);
-        return decryptedText;
-    }
-
-    public static void establecerClaveCompartida(KeyPair kp, PublicKey pubKeyServidor) throws NoSuchAlgorithmException, InvalidKeyException {
-        // Inicializar el objeto KeyAgreement
-        KeyAgreement keyAgreement = KeyAgreement.getInstance("DH");
-
-        // Inicializar KeyAgreement con la clave privada del par de claves y la clave pública del servidor
-        keyAgreement.init(kp.getPrivate());
-        keyAgreement.doPhase(pubKeyServidor, true);
-
-        // Generar la clave compartida
-        byte[] sharedSecret = keyAgreement.generateSecret();
-
-        // Utilizar los primeros 128 bits de la clave compartida para AES (16 bytes)
-        claveCompartida = new SecretKeySpec(sharedSecret, 0, 16, "AES");
+        return new String(decryptedMessage);
     }
 }
