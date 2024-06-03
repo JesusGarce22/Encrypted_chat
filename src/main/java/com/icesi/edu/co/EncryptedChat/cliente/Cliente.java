@@ -15,7 +15,7 @@ import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
 
 public class Cliente {
-    private static final String SERVER_IP = "localhost";
+    private static final String SERVER_IP = "192.168.1.8";
     private static final int SERVER_PORT = 12345;
 
     public static void main(String[] args) {
